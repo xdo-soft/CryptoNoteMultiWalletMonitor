@@ -2,7 +2,7 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="CryptoNoteMultiWalletMonitor.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="TransferredSoFar" Type="System.Decimal" Scope="User">
+    <Setting Name="AutoTransferredSoFar" Type="System.Decimal" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="WalletDirectory" Type="System.String" Scope="User">
@@ -23,10 +23,10 @@
     <Setting Name="RegexBalanceMatch" Type="System.String" Scope="User">
       <Value Profile="(Default)">(\s*|^)balance:\s*(?&lt;Balance&gt;\d*(.)?\d*),\s*unlocked\s*balance:\s*(?&lt;UnlockedBalance&gt;\d*(.)?\d*)$</Value>
     </Setting>
-    <Setting Name="MinimumAutoTransfer" Type="System.Decimal" Scope="User">
+    <Setting Name="AutoTransferMinimum" Type="System.Decimal" Scope="User">
       <Value Profile="(Default)">5</Value>
     </Setting>
-    <Setting Name="Fee" Type="System.Decimal" Scope="User">
+    <Setting Name="AutoTransferFee" Type="System.Decimal" Scope="User">
       <Value Profile="(Default)">0.005</Value>
     </Setting>
     <Setting Name="AutoTransferPaymentID" Type="System.String" Scope="User">
@@ -35,7 +35,7 @@
     <Setting Name="AutoTransferAddress" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="MixInCount" Type="System.UInt32" Scope="User">
+    <Setting Name="AutoTransferMixInCount" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="RefreshIntervalSeconds" Type="System.UInt32" Scope="User">
@@ -43,6 +43,12 @@
     </Setting>
     <Setting Name="SettingsUpgradeRequired" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="AutoTransferPauseTimeSeconds" Type="System.UInt32" Scope="User">
+      <Value Profile="(Default)">240</Value>
+    </Setting>
+    <Setting Name="AutoTransferEnabled" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>

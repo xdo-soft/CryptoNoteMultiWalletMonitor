@@ -26,6 +26,9 @@ namespace CryptoNoteMultiWalletMonitor
 		private static bool mbIsPaused = false;
 		private static Object mConsoleLock = new Object( );
 
+		private static List<String> masPropertyNames = new List<string>( );
+		private static int mnPropertyNameLength = 0;
+
 		private static void Main( string[ ] args )
 		{
 			lock( mConsoleLock )
@@ -39,10 +42,16 @@ namespace CryptoNoteMultiWalletMonitor
 				Settings.Default.SettingsUpgradeRequired = false;
 			}
 			Settings.Default.Save( );
+			foreach( SettingsProperty lProperty in Settings.Default.Properties )
+			{
+				masPropertyNames.Add( lProperty.Name );
+				if( lProperty.Name.Length > mnPropertyNameLength ) mnPropertyNameLength = lProperty.Name.Length;
+			}
+			masPropertyNames.Sort( );
 			if( args.Length > 0 )
 			{
-				string lsFirstArgument = args[0].Trim( );
-				string lsFirstArgumentLower = lsFirstArgument.ToUpperInvariant( ) ;
+				string lsFirstArgument = args[ 0 ].Trim( );
+				string lsFirstArgumentLower = lsFirstArgument.ToUpperInvariant( );
 				if( lsFirstArgumentLower == "HELP" || lsFirstArgumentLower == "-HELP" || lsFirstArgumentLower == "--HELP" || lsFirstArgumentLower == "/HELP" || lsFirstArgument == "/?" || lsFirstArgument == "-?" )
 				{
 					lock( mConsoleLock )
@@ -112,7 +121,7 @@ namespace CryptoNoteMultiWalletMonitor
 						Console.WriteLine( "unpause                               Unpauses automatic refreshing." );
 						Console.WriteLine( "<command>                             Sends the command <command> to all child wallets. See below for supported child wallet commands." );
 						Console.WriteLine( "<walletfilename> <command>            Sends the command <command> to the child wallet <walletfilename>. See below for supported child wallet commands." );
-						DisplaySetHelp( );
+						DisplayGetSetHelp( );
 						Console.WriteLine( "Commands for the child wallets include:" );
 					}
 					PushCommand( "help", masWallets[ 1 ] );
@@ -151,28 +160,73 @@ namespace CryptoNoteMultiWalletMonitor
 
 		private static bool CommandIsForAll( String lsCommand )
 		{
-			if( lsCommand == "set" )
+			if( lsCommand == "set" || lsCommand == "get" )
 			{
-				lock( mConsoleLock ) DisplaySetHelp( );
+				lock( mConsoleLock ) DisplayGetSetHelp( );
 				return false;
 			}
+
+			if( lsCommand.Length > 4 && lsCommand.Substring( 0, 4 ) == "get " )
+			{
+				lsCommand = lsCommand.Substring( 4 ).Trim( );
+				int lnSpaceIndex = lsCommand.IndexOf( ' ' );
+				if( lnSpaceIndex >= 0 )
+				{
+					lock( mConsoleLock ) DisplayGetSetHelp( );
+					return false;
+				}
+				if( !masPropertyNames.Contains( lsCommand ) )
+				{
+					lock( mConsoleLock )
+					{
+						Console.ForegroundColor = ConsoleColor.Red;
+						Console.WriteLine( lsCommand + " is not a valid property." );
+						Console.ResetColor( );
+						DisplayGetSetHelp( );
+					}
+				}
+				try
+				{
+					lock( mConsoleLock ) Console.WriteLine( Convert.ToString( Settings.Default[ lsCommand ], CultureInfo.CurrentCulture ) );
+				}
+				catch( Exception lException )
+				{
+					lock( mConsoleLock )
+					{
+						Console.ForegroundColor = ConsoleColor.Red;
+						Console.WriteLine( lException.ToString( ) );
+						Console.ResetColor( );
+					}
+				}
+				return false;
+			}
+
 			if( lsCommand.Length > 4 && lsCommand.Substring( 0, 4 ) == "set " )
 			{
 				lsCommand = lsCommand.Substring( 4 ).Trim( );
 				int lnSpaceIndex = lsCommand.IndexOf( ' ' );
 				if( lnSpaceIndex < 0 )
 				{
-					lock( mConsoleLock ) DisplaySetHelp( );
+					lock( mConsoleLock ) DisplayGetSetHelp( );
 					return false;
 				}
 				string lsToSet = lsCommand.Substring( 0, lnSpaceIndex ).Trim( );
+				if( !masPropertyNames.Contains( lsToSet ) )
+				{
+					lock( mConsoleLock )
+					{
+						Console.ForegroundColor = ConsoleColor.Red;
+						Console.WriteLine( lsToSet + " is not a valid property." );
+						Console.ResetColor( );
+						DisplayGetSetHelp( );
+					}
+				}
 				string lsValue = lsCommand.Substring( lnSpaceIndex + 1 ).Trim( );
 				try
 				{
 					lock( Settings.Default )
 					{
 						Type lType = Settings.Default[ lsToSet ].GetType( );
-						// Console.WriteLine( lType.ToString( ) );
 						Settings.Default[ lsToSet ] = Convert.ChangeType( lsValue, lType, CultureInfo.CurrentCulture );
 						Settings.Default.Save( );
 					}
@@ -212,14 +266,30 @@ namespace CryptoNoteMultiWalletMonitor
 			return true;
 		}
 
-		private static void DisplaySetHelp( )
+		private static void DisplayGetSetHelp( )
 		{
 			// deliberately does not lock the console
+			Console.WriteLine( "get <PropertyName> <PropertyValue>    Gets the current value of the property <PropertyName> of CryptoNoteMultiWalletMonitor." );
 			Console.WriteLine( "set <PropertyName> <PropertyValue>    Sets the property <PropertyName> of CryptoNoteMultiWalletMonitor to the value <PropertyValue>." );
 			Console.WriteLine( "PropertyName may be any of the following:" );
-			foreach( SettingsProperty lProperty in Settings.Default.Properties )
+
+			foreach( String lPropertyName in masPropertyNames )
 			{
-				Console.WriteLine( "\t" + lProperty.Name );
+				Console.Write( "    " + lPropertyName );
+				Console.CursorLeft = mnPropertyNameLength + 8;
+				try
+				{
+					lock( mConsoleLock ) Console.Write( Convert.ToString( Settings.Default[ lPropertyName ], CultureInfo.CurrentCulture ) + "\n" );
+				}
+				catch( Exception lException )
+				{
+					lock( mConsoleLock )
+					{
+						Console.ForegroundColor = ConsoleColor.Red;
+						Console.WriteLine( lException.ToString( ) );
+						Console.ResetColor( );
+					}
+				}
 			}
 		}
 
@@ -319,15 +389,16 @@ namespace CryptoNoteMultiWalletMonitor
 							mUnlockedBalances[ lnKey ] = Convert.ToDecimal( lRegexMatch.Groups[ "UnlockedBalance" ].Value, CultureInfo.InvariantCulture );
 							lock( Settings.Default )
 							{
-								if( Settings.Default.AutoTransferAddress.Length > 0 && mUnlockedBalances[ lnKey ] > Settings.Default.MinimumAutoTransfer + Settings.Default.Fee )
+								if( Settings.Default.AutoTransferEnabled && Settings.Default.AutoTransferAddress.Length > 0 && mUnlockedBalances[ lnKey ] > Settings.Default.AutoTransferMinimum + Settings.Default.AutoTransferFee )
 								{
-									decimal lToTransfer = mUnlockedBalances[ lnKey ] - Settings.Default.Fee;
-									lProcess.StandardInput.WriteLine( ( "transfer " + Settings.Default.MixInCount + " " + Settings.Default.AutoTransferAddress + " " + lToTransfer.ToString( CultureInfo.InvariantCulture ) + " " + Settings.Default.AutoTransferPaymentID ).TrimEnd( ) );
-									Settings.Default.TransferredSoFar += lToTransfer;
-									Settings.Default.Save( );
-									Thread.Sleep( 5000 );
+									decimal lToTransfer = mUnlockedBalances[ lnKey ] - Settings.Default.AutoTransferFee;
 									lock( mConsoleLock )
 									{
+										lProcess.StandardInput.WriteLine( ( "transfer " + Settings.Default.AutoTransferMixInCount + " " + Settings.Default.AutoTransferAddress + " " + lToTransfer.ToString( CultureInfo.InvariantCulture ) + " " + Settings.Default.AutoTransferPaymentID ).TrimEnd( ) );
+										Settings.Default.AutoTransferredSoFar += lToTransfer;
+										Settings.Default.Save( );
+										Console.WriteLine( "Pausing all operations for " + Settings.Default.AutoTransferPauseTimeSeconds.ToString( CultureInfo.CurrentCulture ) + " seconds. Please be patient." );
+										Thread.Sleep( ( int ) Math.Min( Int32.MaxValue, Settings.Default.AutoTransferPauseTimeSeconds * 1000 ) );
 										lProcess.StandardInput.WriteLine( "refresh" );
 										lProcess.StandardInput.WriteLine( "save" );
 										lProcess.StandardInput.WriteLine( "balance" );
@@ -340,10 +411,10 @@ namespace CryptoNoteMultiWalletMonitor
 							lock( mConsoleLock )
 							{
 								Console.ForegroundColor = ConsoleColor.Green;
-								Console.WriteLine( "Total balance:                        " + lTotalBalance.ToString( CultureInfo.CurrentCulture ) );
-								Console.WriteLine( "Total unlocked balance:               " + lTotalUnlockedBalance.ToString( CultureInfo.CurrentCulture ) );
-								Console.WriteLine( "Total transferred:                    " + Settings.Default.TransferredSoFar.ToString( CultureInfo.CurrentCulture ) );
-								Console.WriteLine( "Total balance, including transferred: " + ( lTotalBalance + Settings.Default.TransferredSoFar ).ToString( CultureInfo.CurrentCulture ) );
+								Console.WriteLine( "Total balance:                             " + lTotalBalance.ToString( CultureInfo.CurrentCulture ) );
+								Console.WriteLine( "Total unlocked balance:                    " + lTotalUnlockedBalance.ToString( CultureInfo.CurrentCulture ) );
+								Console.WriteLine( "Total auto-transferred:                    " + Settings.Default.AutoTransferredSoFar.ToString( CultureInfo.CurrentCulture ) );
+								Console.WriteLine( "Total balance, including auto-transferred: " + ( lTotalBalance + Settings.Default.AutoTransferredSoFar ).ToString( CultureInfo.CurrentCulture ) );
 								Console.ResetColor( );
 							}
 						}

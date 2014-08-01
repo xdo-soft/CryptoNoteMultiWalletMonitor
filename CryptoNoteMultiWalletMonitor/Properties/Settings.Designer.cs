@@ -26,12 +26,12 @@ namespace CryptoNoteMultiWalletMonitor.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public decimal TransferredSoFar {
+        public decimal AutoTransferredSoFar {
             get {
-                return ((decimal)(this["TransferredSoFar"]));
+                return ((decimal)(this["AutoTransferredSoFar"]));
             }
             set {
-                this["TransferredSoFar"] = value;
+                this["AutoTransferredSoFar"] = value;
             }
         }
         
@@ -111,24 +111,24 @@ namespace CryptoNoteMultiWalletMonitor.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("5")]
-        public decimal MinimumAutoTransfer {
+        public decimal AutoTransferMinimum {
             get {
-                return ((decimal)(this["MinimumAutoTransfer"]));
+                return ((decimal)(this["AutoTransferMinimum"]));
             }
             set {
-                this["MinimumAutoTransfer"] = value;
+                this["AutoTransferMinimum"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0.005")]
-        public decimal Fee {
+        public decimal AutoTransferFee {
             get {
-                return ((decimal)(this["Fee"]));
+                return ((decimal)(this["AutoTransferFee"]));
             }
             set {
-                this["Fee"] = value;
+                this["AutoTransferFee"] = value;
             }
         }
         
@@ -159,12 +159,12 @@ namespace CryptoNoteMultiWalletMonitor.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public uint MixInCount {
+        public uint AutoTransferMixInCount {
             get {
-                return ((uint)(this["MixInCount"]));
+                return ((uint)(this["AutoTransferMixInCount"]));
             }
             set {
-                this["MixInCount"] = value;
+                this["AutoTransferMixInCount"] = value;
             }
         }
         
@@ -189,6 +189,30 @@ namespace CryptoNoteMultiWalletMonitor.Properties {
             }
             set {
                 this["SettingsUpgradeRequired"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("240")]
+        public uint AutoTransferPauseTimeSeconds {
+            get {
+                return ((uint)(this["AutoTransferPauseTimeSeconds"]));
+            }
+            set {
+                this["AutoTransferPauseTimeSeconds"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AutoTransferEnabled {
+            get {
+                return ((bool)(this["AutoTransferEnabled"]));
+            }
+            set {
+                this["AutoTransferEnabled"] = value;
             }
         }
     }
