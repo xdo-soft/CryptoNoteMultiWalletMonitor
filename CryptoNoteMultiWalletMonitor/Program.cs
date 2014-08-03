@@ -17,6 +17,7 @@ namespace CryptoNoteMultiWalletMonitor
 		private static Dictionary<int, Decimal> mBalances = new Dictionary<int, Decimal>( );
 		private static Dictionary<int, Decimal> mUnlockedBalances = new Dictionary<int, Decimal>( );
 		private static Dictionary<int, object> mLocks = new Dictionary<int, object>( );
+		private static Dictionary<int, bool> mAwaitingTransfer = new Dictionary<int, bool>( );
 		private static Dictionary<string, Process> mProcesses = new Dictionary<string, Process>( );
 
 		private static IEnumerable<string> masWalletFullPaths = System.IO.Directory.EnumerateFiles( Settings.Default.WalletDirectory, Settings.Default.WalletFilter );
@@ -335,6 +336,7 @@ namespace CryptoNoteMultiWalletMonitor
 					lProcess.BeginErrorReadLine( );
 					mProcesses[ lsWallet ] = lProcess;
 				}
+				mAwaitingTransfer[ lProcess.Id ] = false;
 			}
 			catch( Exception lException )
 			{
@@ -382,40 +384,45 @@ namespace CryptoNoteMultiWalletMonitor
 						Console.ResetColor( );
 						Console.CursorLeft = mnWalletNameLength + 4;
 						Console.Write( lsFoundLine + "\n" );
-						Match lRegexMatch = Regex.Match( lsFoundLine, Settings.Default.RegexBalanceMatch, RegexOptions.ExplicitCapture );
-						if( lRegexMatch.Success )
+						if( Regex.IsMatch( lsFoundLine, Settings.Default.RegexSpentMatch ) ) mAwaitingTransfer[ lnKey ] = false;
+						else
 						{
-							mBalances[ lnKey ] = Convert.ToDecimal( lRegexMatch.Groups[ "Balance" ].Value, CultureInfo.InvariantCulture );
-							mUnlockedBalances[ lnKey ] = Convert.ToDecimal( lRegexMatch.Groups[ "UnlockedBalance" ].Value, CultureInfo.InvariantCulture );
-							lock( Settings.Default )
+							Match lRegexMatch = Regex.Match( lsFoundLine, Settings.Default.RegexBalanceMatch, RegexOptions.ExplicitCapture );
+							if( lRegexMatch.Success )
 							{
-								if( Settings.Default.AutoTransferEnabled && Settings.Default.AutoTransferAddress.Length > 0 && mUnlockedBalances[ lnKey ] > Settings.Default.AutoTransferMinimum + Settings.Default.AutoTransferFee )
+								mBalances[ lnKey ] = Convert.ToDecimal( lRegexMatch.Groups[ "Balance" ].Value, CultureInfo.InvariantCulture );
+								mUnlockedBalances[ lnKey ] = Convert.ToDecimal( lRegexMatch.Groups[ "UnlockedBalance" ].Value, CultureInfo.InvariantCulture );
+								lock( Settings.Default )
 								{
-									decimal lToTransfer = mUnlockedBalances[ lnKey ] - Settings.Default.AutoTransferFee;
-									lock( mConsoleLock )
+									if( ( !mAwaitingTransfer[ lnKey ] ) && Settings.Default.AutoTransferEnabled && Settings.Default.AutoTransferAddress.Length > 0 && mUnlockedBalances[ lnKey ] > Settings.Default.AutoTransferMinimum + Settings.Default.AutoTransferFee )
 									{
-										lProcess.StandardInput.WriteLine( ( "transfer " + Settings.Default.AutoTransferMixInCount + " " + Settings.Default.AutoTransferAddress + " " + lToTransfer.ToString( CultureInfo.InvariantCulture ) + " " + Settings.Default.AutoTransferPaymentID ).TrimEnd( ) );
-										Settings.Default.AutoTransferredSoFar += lToTransfer;
-										Settings.Default.Save( );
-										Console.WriteLine( "Pausing all operations for " + Settings.Default.AutoTransferPauseTimeSeconds.ToString( CultureInfo.CurrentCulture ) + " seconds. Please be patient." );
-										Thread.Sleep( ( int ) Math.Min( Int32.MaxValue, Settings.Default.AutoTransferPauseTimeSeconds * 1000 ) );
-										lProcess.StandardInput.WriteLine( "refresh" );
-										lProcess.StandardInput.WriteLine( "save" );
-										lProcess.StandardInput.WriteLine( "balance" );
+										decimal lToTransfer = mUnlockedBalances[ lnKey ] - Settings.Default.AutoTransferFee;
+										lock( mConsoleLock )
+										{
+											lProcess.StandardInput.WriteLine( ( "transfer " + Settings.Default.AutoTransferMixInCount + " " + Settings.Default.AutoTransferAddress + " " + lToTransfer.ToString( CultureInfo.InvariantCulture ) + " " + Settings.Default.AutoTransferPaymentID ).TrimEnd( ) );
+											Settings.Default.AutoTransferredSoFar += lToTransfer;
+											Settings.Default.Save( );
+											Console.WriteLine( "Pausing all operations for " + Settings.Default.AutoTransferPauseTimeSeconds.ToString( CultureInfo.CurrentCulture ) + " seconds. Please be patient." );
+											mAwaitingTransfer[ lnKey ] = true;
+											Thread.Sleep( ( int ) Math.Min( Int32.MaxValue, Settings.Default.AutoTransferPauseTimeSeconds * 1000 ) );
+											lProcess.StandardInput.WriteLine( "refresh" );
+											lProcess.StandardInput.WriteLine( "save" );
+											lProcess.StandardInput.WriteLine( "balance" );
+										}
 									}
 								}
-							}
-							Decimal lTotalBalance = mBalances.Values.Sum( );
-							Decimal lTotalUnlockedBalance = mUnlockedBalances.Values.Sum( );
+								Decimal lTotalBalance = mBalances.Values.Sum( );
+								Decimal lTotalUnlockedBalance = mUnlockedBalances.Values.Sum( );
 
-							lock( mConsoleLock )
-							{
-								Console.ForegroundColor = ConsoleColor.Green;
-								Console.WriteLine( "Total balance:                             " + lTotalBalance.ToString( CultureInfo.CurrentCulture ) );
-								Console.WriteLine( "Total unlocked balance:                    " + lTotalUnlockedBalance.ToString( CultureInfo.CurrentCulture ) );
-								Console.WriteLine( "Total auto-transferred:                    " + Settings.Default.AutoTransferredSoFar.ToString( CultureInfo.CurrentCulture ) );
-								Console.WriteLine( "Total balance, including auto-transferred: " + ( lTotalBalance + Settings.Default.AutoTransferredSoFar ).ToString( CultureInfo.CurrentCulture ) );
-								Console.ResetColor( );
+								lock( mConsoleLock )
+								{
+									Console.ForegroundColor = ConsoleColor.Green;
+									Console.WriteLine( "Total balance:                             " + lTotalBalance.ToString( CultureInfo.CurrentCulture ) );
+									Console.WriteLine( "Total unlocked balance:                    " + lTotalUnlockedBalance.ToString( CultureInfo.CurrentCulture ) );
+									Console.WriteLine( "Total auto-transferred:                    " + Settings.Default.AutoTransferredSoFar.ToString( CultureInfo.CurrentCulture ) );
+									Console.WriteLine( "Total balance, including auto-transferred: " + ( lTotalBalance + Settings.Default.AutoTransferredSoFar ).ToString( CultureInfo.CurrentCulture ) );
+									Console.ResetColor( );
+								}
 							}
 						}
 					}

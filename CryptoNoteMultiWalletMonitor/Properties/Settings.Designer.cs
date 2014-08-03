@@ -215,5 +215,17 @@ namespace CryptoNoteMultiWalletMonitor.Properties {
                 this["AutoTransferEnabled"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("\\s+spent\\s+")]
+        public string RegexSpentMatch {
+            get {
+                return ((string)(this["RegexSpentMatch"]));
+            }
+            set {
+                this["RegexSpentMatch"] = value;
+            }
+        }
     }
 }
