@@ -428,6 +428,7 @@ namespace CryptoNoteMultiWalletMonitor
 					}
 					Thread.Sleep( 0 );
 				}
+				Thread.Sleep( 100 );
 			}
 		}
 
