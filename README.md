@@ -14,4 +14,6 @@ The easiest way to get started is to drop the .exe in the folder containing simp
 
 XDO
 
-P.S. If this is useful to you, please donate XMR to 46uTqSikV8HYiFoaS5YbCYZzCeUMEVCWpSmPvwM6N7bDJkU7iapV8vEZLWw1YveVVc2gaUUfqsA7QNaTCHeBAzrdFANvvYK or BTC to 14GK9YMxgkZ9FWNA7Q82ovkswJ9inYtcNN.
+P.S. If this is useful to you, please donate XMR to 46uTqSikV8HYiFoaS5YbCYZzCeUMEVCWpSmPvwM6N7bDJkU7iapV8vEZLWw1YveVVc2gaUUfqsA7QNaTCHeBAzrdFANvvYK
+or BTC to
+13uJ63ABebRhjsbAvyfyZ7HBfeywRNRUYp.
